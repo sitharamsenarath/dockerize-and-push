@@ -9,8 +9,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v3
+    - run: chmod +x scripts/entrypoint.sh
+      shell: bash
 
     - name: Debug - print current directory
       shell: bash
@@ -22,4 +22,3 @@ runs:
 
     - name: Run Dockerize Script
       shell: bash
-      run: ./scripts/entrypoint.sh "${{ inputs.image_tag }}"
