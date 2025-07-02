@@ -1,30 +1,39 @@
 #!/bin/bash
 set -e
 
-TAG=$1
+echo "Running entrypoint script with image tag: $1"
 
-echo "🔍 Detecting project type..."
+# Simple example: detect language and create a Dockerfile dynamically (very basic)
 
-if [ -f "requirements.txt" ] && [ -f "main.py" ]; then
-    echo "Python project detected"
-    cat <<EOF > Dockerfile
-FROM python:3.9-slim
+if [ -f "package.json" ]; then
+  echo "Detected Node.js project"
+  cat > Dockerfile <<EOF
+FROM node:18
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-CMD ["python", "main.py"]
+RUN npm install
+CMD ["node", "index.js"]
 EOF
+
+elif [ -f "requirements.txt" ]; then
+  echo "Detected Python project"
+  cat > Dockerfile <<EOF
+FROM python:3.10
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+CMD ["python", "app.py"]
+EOF
+
 else
-    echo "Unknown project type. Exiting."
-    exit 1
+  echo "Language not detected, using alpine base"
+  cat > Dockerfile <<EOF
+FROM alpine
+CMD ["echo", "No Dockerfile generated"]
+EOF
 fi
 
-echo "Building image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY##*/}:${TAG}"
-docker build -t ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY##*/}:${TAG} .
+echo "Building Docker image with tag: $1"
+docker build -t my-image:$1 .
 
-echo "Logging in to GitHub Container Registry"
-echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-
-echo "Pushing image..."
-docker push ghcr.io/${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY##*/}:${TAG}
+echo "Docker image built successfully!"
