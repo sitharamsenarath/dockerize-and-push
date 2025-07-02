@@ -1,0 +1,63 @@
+name: Auto Dockerize and Publish
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      repo:
+        required: true
+        type: string
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.repo }}
+          ref: ${{ inputs.ref }}
+
+      - name: Detect language
+        id: detect
+        run: |
+          if ls *.py 1> /dev/null 2>&1 || test -f requirements.txt; then
+            echo "language=python" >> $GITHUB_OUTPUT
+          elif ls *.R 1> /dev/null 2>&1 || test -f DESCRIPTION; then
+            echo "language=R" >> $GITHUB_OUTPUT
+          else
+            echo "language=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Dockerfile for Python
+        if: steps.detect.outputs.language == 'python'
+        run: |
+          echo 'FROM python:3.9-slim
+          WORKDIR /main
+          COPY . /main
+          RUN pip install --no-cache-dir -r requirements.txt
+          CMD ["python", "app.py"]' > Dockerfile
+
+      - name: Create Dockerfile for R
+        if: steps.detect.outputs.language == 'R'
+        run: |
+          echo 'FROM r-base:latest
+          WORKDIR /app
+          COPY . /app
+          RUN R -e "if(!requireNamespace(\"renv\", quietly=TRUE)) install.packages(\"renv\"); renv::restore()"
+          CMD ["Rscript", "app.R"]' > Dockerfile
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.DOCKER_IMAGE }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/${{ inputs.repo }}
+          docker build -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest
