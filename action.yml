@@ -1,5 +1,6 @@
 name: "Dockerize and Push"
 description: "Auto-detect language and dockerize codebase"
+
 inputs:
   image_tag:
     description: "Docker image tag"
@@ -9,16 +10,18 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: chmod +x scripts/entrypoint.sh
+    - name: Make entrypoint executable
+      run: chmod +x ./scripts/entrypoint.sh
       shell: bash
 
     - name: Debug - print current directory
-      shell: bash
       run: pwd
+      shell: bash
 
     - name: Debug - list scripts directory contents
-      shell: bash
       run: ls -l ./scripts
+      shell: bash
 
     - name: Run Dockerize Script
+      run: ./scripts/entrypoint.sh "${{ inputs.image_tag }}"
       shell: bash
