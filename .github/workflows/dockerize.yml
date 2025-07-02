@@ -9,9 +9,9 @@ on:
       repo:
         required: true
         type: string
+    secrets:
       token:
         required: true
-        type: string
 
 jobs:
   build-and-push:
@@ -57,7 +57,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.DOCKER_IMAGE }}
+          password: ${{ secrets.token }}
 
       - name: Build and push Docker image
         run: |
