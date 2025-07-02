@@ -1,0 +1,17 @@
+name: "Dockerize and Push"
+description: "Auto-detect language and dockerize codebase"
+inputs:
+  image_tag:
+    description: "Docker image tag"
+    required: true
+    default: "latest"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Run Dockerize Script
+      shell: bash
+      run: ./scripts/entrypoint.sh "${{ inputs.image_tag }}"
