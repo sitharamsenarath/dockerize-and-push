@@ -12,6 +12,14 @@ runs:
     - name: Set up Docker
       uses: docker/setup-buildx-action@v3
 
+    - name: Debug - print current directory
+      shell: bash
+      run: pwd
+
+    - name: Debug - list scripts directory contents
+      shell: bash
+      run: ls -l ./scripts
+
     - name: Run Dockerize Script
       shell: bash
       run: ./scripts/entrypoint.sh "${{ inputs.image_tag }}"
